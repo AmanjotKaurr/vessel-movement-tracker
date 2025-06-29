@@ -20,15 +20,11 @@ builder.Services.AddCors(options =>
 });
 
 // Database configuration - using PostgreSQL (cloud-ready)
-/*var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
-    Environment.GetEnvironmentVariable("DATABASE_URL") ??
-    "Host=localhost;Database=vessel_db;Username=postgres;Password=yourpassword";*/
 
-    var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
-    if (string.IsNullOrEmpty(connectionString))
-    {
-        throw new Exception("DATABASE_URL environment variable is not set.");
-    }
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? throw new Exception("No valid database connection string found.");
+
 
 
 // Handle Heroku-style DATABASE_URL format
@@ -44,11 +40,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
@@ -64,5 +60,5 @@ using (var scope = app.Services.CreateScope())
     Console.WriteLine(connectionString);
     dbContext.Database.EnsureCreated();
 }
-
+app.MapGet("/", () => Results.Redirect("/swagger"));
 app.Run();
