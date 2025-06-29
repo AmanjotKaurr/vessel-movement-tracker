@@ -20,9 +20,16 @@ builder.Services.AddCors(options =>
 });
 
 // Database configuration - using PostgreSQL (cloud-ready)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
+/*var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ??
     Environment.GetEnvironmentVariable("DATABASE_URL") ??
-    "Host=localhost;Database=vessel_db;Username=postgres;Password=yourpassword";
+    "Host=localhost;Database=vessel_db;Username=postgres;Password=yourpassword";*/
+
+    var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new Exception("DATABASE_URL environment variable is not set.");
+    }
+
 
 // Handle Heroku-style DATABASE_URL format
 if (connectionString.StartsWith("postgres://"))
@@ -52,6 +59,9 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    Console.WriteLine(">>> CONNECTION STRING:");
+    Console.WriteLine(connectionString);
     dbContext.Database.EnsureCreated();
 }
 
