@@ -17,29 +17,34 @@ namespace VesselMovementAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateVessel([FromBody] Vessel vessel)
+    public async Task<IActionResult> CreateVessel([FromBody] Vessel vessel)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        try
         {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
+            vessel.StartTime = DateTime.UtcNow;
+            vessel.TraveledKm = 0;
+            vessel.Status = "In Transit";
 
-                vessel.StartTime = DateTime.UtcNow;
-                vessel.TraveledKm = 0;
-                vessel.Status = "In Transit";
+            _context.Vessels.Add(vessel);
+            await _context.SaveChangesAsync();
 
-                _context.Vessels.Add(vessel);
-                await _context.SaveChangesAsync();
-
-                return CreatedAtAction(nameof(GetVessel), new { id = vessel.Id }, vessel);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error creating vessel: {ex.Message}");
-            }
+            return CreatedAtAction(nameof(GetVessel), new { id = vessel.Id }, vessel);
         }
+        catch (DbUpdateException dbEx)
+        {
+            Console.WriteLine("❌ DB Update Exception: " + dbEx.InnerException?.Message ?? dbEx.Message);
+            return StatusCode(503, "Database write failed due to transient issue. Please try again.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ General Exception: " + ex.Message);
+            return StatusCode(500, $"Unexpected error: {ex.Message}");
+        }
+    }
+
 
         [HttpGet]
         public async Task<IActionResult> GetAllVessels()
