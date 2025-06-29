@@ -46,16 +46,15 @@ namespace VesselMovementAPI.Controllers
         {
             try
             {
-                var vessels = await _context.Vessels.ToListAsync();
-                
-                // Update vessel positions based on elapsed time
+                var vessels = await _context.Vessels
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // Update vessel positions in memory only
                 foreach (var vessel in vessels)
                 {
                     UpdateVesselPosition(vessel);
                 }
-
-                // Save updated positions
-                await _context.SaveChangesAsync();
 
                 return Ok(vessels);
             }
@@ -64,6 +63,7 @@ namespace VesselMovementAPI.Controllers
                 return StatusCode(500, $"Error retrieving vessels: {ex.Message}");
             }
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetVessel(int id)
