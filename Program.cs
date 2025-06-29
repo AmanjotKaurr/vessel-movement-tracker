@@ -34,24 +34,24 @@ if (connectionString.StartsWith("postgres://"))
     connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SslMode=Require;TrustServerCertificate=true";
 }
 
+Console.WriteLine(">>> CONNECTION STRING:\n" + connectionString);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
-//if (app.Environment.IsDevelopment())
-//{
     app.UseSwagger();
     app.UseSwaggerUI();
-//}
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
 
 // Auto-migrate database on startup
+try
+{
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -59,6 +59,11 @@ using (var scope = app.Services.CreateScope())
     Console.WriteLine(">>> CONNECTION STRING:");
     Console.WriteLine(connectionString);
     dbContext.Database.EnsureCreated();
+}
+}
+catch (Exception ex)
+{
+    Console.WriteLine("❌ DB Init Error: " + ex);
 }
 app.MapGet("/", () => Results.Redirect("/swagger"));
 app.Run();
